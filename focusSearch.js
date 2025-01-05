@@ -19,12 +19,16 @@ var index = -1;
 var modeKB = false;
 var keys = [];
 var show = false;
+var firstPress = false;
+var isSpecialShorcutPress = false;
 
 function switchVisibilityButtons(value){
-	if(show == value) return;
+	// if(show == value) return;
 	let buttons = document.querySelectorAll('button[id="buref"]');
-	show = ! show;
-	if(show){
+	// console.log(buttons);
+	console.log("llego aca " + buttons.length);
+	show = value;
+	if(value){
 		buttons.forEach((element)=> element.style.visibility = "visible");
 	}else{
 		buttons.forEach((element)=> element.style.visibility = "hidden");
@@ -40,24 +44,31 @@ document.addEventListener("keydown",(e)=>{
 		nodes[index].focus();
 	}
 
-	//Mostrar indices de elementos
-	if(e.ctrlKey && e.code =="KeyZ"){
-		switchVisibilityButtons();
-	}
-
-	console.log(e.code+" "+e.key);
-	if(e.code=="ShiftLeft" || e.code=="ShiftRight" ){
-		let textSearch = document.querySelectorAll(pattern);
-		if(textSearch.length != nodes.length){
-			console.log("debug " + nodes.length + " " + textSearch.length);
-			document.querySelectorAll('button[id="buref"]').forEach((e) => e.remove());
-			getValidNodes();
+	if(e.ctrlKey && e.code =="Space" && !isSpecialShorcutPress){
+		isSpecialShorcutPress = true;
+		firstPress = !firstPress;
+		if(modeKB && !firstPress) {
+			//Si el modo listen esta activado se activa el nodo
+			if(keys.length != 0){
+				index = keys.join("");
+				if(index < nodes.length){
+					nodes[index].focus();
+					nodes[index].click();
+				}
+			}
+			console.log("si llega aca");
+			notification.style.display = "none";
+			modeKB = false;
+			keys = [];
+		}else{
+			//Mostrar indices de elementos
+			switchVisibilityButtons(true);
 		}
-		if(modeKB) notification.style.display="none";
-		if(!modeKB ) switchVisibilityButtons(true);
 	}
 
-	//check shortcut
+	console.log(e.ctrlKey+" "+e.key);
+
+	//Inserta digitos en el modo listen
 	const regexp=/Digit[0-9]/g;
 	if(modeKB){
 		if(regexp.exec(e.code)) keys.push(e.code[e.code.length -1]);
@@ -66,25 +77,23 @@ document.addEventListener("keydown",(e)=>{
 });
 
 document.addEventListener("keyup",(e)=>{
-	if(e.code=="ShiftLeft" || e.code=="ShiftRight" ){
-		if(modeKB){
-			if(keys.length != 0){
-				console.log("llego aca");
-				index = keys.join("");
-				if(index < nodes.length){
-					nodes[index].focus();
-					nodes[index].click();
-				}
-			}
-			modeKB = false;
-			keys = [];
-		}else{
-			modeKB = true;
-			document.getElementById("noti").textContent="Modo Listen Activado";
-			document.getElementById("noti").style.display="inline";
-			switchVisibilityButtons();
-		}
-		
+	//Vuelve al estado inicial
+	if(e.code == "Escape"){
+		modeKB = false;
+		isSpecialShorcutPress = false;
+		firstPress = false;
+		switchVisibilityButtons(false);
+	}
+
+	
+	if((e.ctrlKey || e.code =="Space") && isSpecialShorcutPress && !modeKB && firstPress){
+		modeKB = true;
+		switchVisibilityButtons(false);
+		notification.textContent="Modo Listen Activado";
+		notification.style.display="inline";
+	}
+	if((e.ctrlKey || e.code =="Space") && isSpecialShorcutPress){
+		isSpecialShorcutPress = false;
 	}
 });
   
